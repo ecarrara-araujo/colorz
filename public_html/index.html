@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>
+        <div id="color_names">    
+             <canvas id="canvas_names" width="300" height="100" style="border:1px solid #d3d3d3;">HTML5 Canvas not Supported</canvas>    
+             <canvas id="canvas_score" width="200" height="100" style="border:1px solid #d3d3d3;">HTML5 Canvas not Supported</canvas>    
+        </div>
+        <div>
+            <canvas id="canvas_messages" width="500" height="50" style="border:1px solid #d3d3d3;">HTML5 Canvas not Supported</canvas>
+        </div>
+        <div id="canvas_container">
+            <canvas id="canvas_colors" width="500" height="500" style="border:1px solid #d3d3d3;">HTML5 Canvas not Supported</canvas>
+        </div>
+        <div>
+            <canvas id="canvas_selected_color" width="500" height="50" style="border:1px solid #d3d3d3;">HTML5 Canvas not Supported</canvas>
+        </div>
+
+        <script type="text/javascript">
+            var score = 0;
+            var currentColorName = "";
+            var currentColorCode = "";
+            var available_colors = [];
+            available_colors[0] = ["#008000","green"];
+            available_colors[1] = ["#800000","red"];
+            available_colors[2] = ["#000080","blue"];
+            available_colors[3] = ["#000000","black"];
+            available_colors[4] = ["#ffcb00","yellow"];
+            available_colors[5] = ["#652601","brown"];
+            available_colors[6] = ["#c8c1ac","gray"]; 
+            
+            function updateScore() {
+                var canvas_score = document.getElementById("canvas_score");
+                var score_ctx = canvas_score.getContext("2d");
+                score_ctx.clearRect(0,0, canvas_score.width, canvas_score.height);
+                var x = canvas_score.width / 2;
+                var y = canvas_score.height / 2;
+                score_ctx.font = "italic 40px Calibri";
+                score_ctx.textAlign = "center";
+                score_ctx.fillStyle = "black";
+                score_ctx.fillText(score, x, y);
+            }
+            
+            function updateCurrentColorName() {
+                var canvas_name = document.getElementById("canvas_names");
+                var name_ctx = canvas_name.getContext("2d");
+                name_ctx.clearRect(0, 0, canvas_name.width, canvas_name.height);
+                var x = canvas_name.width / 2;
+                var y = canvas_name.height / 2;
+                name_ctx.font = "italic 40px Calibri";
+                name_ctx.textAlign = "center";  
+                //name_ctx.fillStyle = "black";
+                name_ctx.fillStyle = getNextColor();
+                name_ctx.fillText(currentColorName, x, y);
+            }
+            
+            function updateSelectedColor(color) {
+                var canvas_name = document.getElementById("canvas_selected_color");
+                var name_ctx = canvas_name.getContext("2d");
+                name_ctx.clearRect(0, 0, canvas_name.width, canvas_name.height);
+                var x = canvas_name.width / 2;
+                var y = canvas_name.height / 2;
+                name_ctx.font = "italic 40px Calibri";
+                name_ctx.textAlign = "center";
+                name_ctx.fillStyle = "black";
+                name_ctx.fillText(color, x, y);
+            }
+            
+            function getNextColor() {
+                var color_index = Math.floor(Math.random() * available_colors.length );
+                return available_colors[color_index][0];
+            }
+            
+            function getNextColorForGame() {
+                var color_index = Math.floor(Math.random() * available_colors.length );
+                currentColorName = available_colors[color_index][1];
+                currentColorCode = available_colors[color_index][0];
+                return available_colors[color_index];
+            }
+            
+            function createColoredElements() {
+                var canvas_colors = document.getElementById("canvas_colors");
+                var colors_ctx = canvas_colors.getContext("2d");
+                var radius = 50;
+                var border = 20;
+                
+                var currentX = radius + border;
+                var currentY = radius + border;
+                
+                colors_ctx.clearRect(0, 0, canvas_colors.width, canvas_colors.height);
+                while( currentX <= (canvas_colors.width - radius - border ) ) {
+                    while( currentY <= (canvas_colors.height - radius - border ) ) {
+                        colors_ctx.beginPath();
+                        colors_ctx.arc(currentX, currentY, radius, 0, 2 * Math.PI, false);
+                        colors_ctx.fillStyle = getNextColor();
+                        colors_ctx.closePath();
+                        colors_ctx.fill();
+                        currentY += (2 * radius + border);
+                    }
+                    currentX += (2 * radius + border);
+                    currentY = radius + border;
+                }
+            }
+            
+            var init = function(){
+                getNextColorForGame();
+                updateScore();
+                updateCurrentColorName();
+                createColoredElements();
+            };
+            
+            window.addEventListener("load",init,false);  
+
+            function writeMessage(message) {
+                var canvas_messages = document.getElementById("canvas_messages");
+                var context = canvas_messages.getContext('2d');
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.font = '18pt Calibri';
+                context.fillStyle = 'black';
+                context.fillText(message, 10, 25);
+            }
+
+            function getMousePos(canvas, evt) {
+                var rect = canvas.getBoundingClientRect();
+                return {
+                    x: evt.clientX - rect.left,
+                    y: evt.clientY - rect.top
+                };
+            }
+            
+            function rgbToHex(r, g, b) {
+                if (r > 255 || g > 255 || b > 255)
+                    throw "Invalid color component";
+                return ((r << 16) | (g << 8) | b).toString(16);
+            }
+            
+            function canvasTouched(coordinates) {
+                var canvas_colors = document.getElementById("canvas_colors");
+                var colors_context = canvas_colors.getContext("2d");
+                var color_data = colors_context.getImageData(coordinates.x, coordinates.y, 1, 1).data;
+                var color_hex = "#" + ("000000" + rgbToHex(color_data[0], color_data[1], color_data[2])).slice(-6);
+                updateSelectedColor(color_hex);
+                
+                if(currentColorCode === color_hex){
+                    //sucesso
+                    score += 1;
+                    writeMessage("Certa Resposta!");
+                    updateScore();
+                    getNextColorForGame();
+                    updateCurrentColorName();
+                    createColoredElements();
+                }else{
+                    writeMessage("Tente Novamente!");
+                }
+            }
+            
+            function onTouch(event) {
+                var coordinates = {
+                    x: event.changedTouches[0].pageX,
+                    y: event.changedTouches[0].pageY
+                };
+                
+                switch (event.type) {
+                    case "touchend": canvasTouched(coordinates); break;
+                }
+            }
+            
+            function onClick(event) {
+                var coordinates = getMousePos(canvas, event);
+                var message = 'Position: ' + coordinates.x + ',' + coordinates.y;
+                writeMessage(canvas, message);
+
+                switch (event.type) {
+                    case "mouseup": canvasTouched(coordinates);  break;
+                }
+            }
+
+            var canvas = document.getElementById("canvas_colors");
+            canvas.addEventListener('mouseup', onClick, false);
+            canvas.addEventListener('touchend', onTouch, false);
+
+        </script>
+    </body>
+</html>
